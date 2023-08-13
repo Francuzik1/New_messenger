@@ -17,7 +17,13 @@ from PIL import Image
 from vidstream import AudioSender
 from vidstream import AudioReceiver
 import threading
+import time
+from multiprocessing import Process
 
+you_start_call = False
+check_call = False
+in_call = False
+win_wait_call = None
 sub_win_r = Tk()
 
 sub_win_r.geometry("800x600")
@@ -407,10 +413,145 @@ if os.path.exists("sent") is False:
     os.mkdir("sent")
 
 groups = []
+msg = None
+
+
+def start_call_aud():
+    global msg
+
+    msg = msg.split("/yes_call/")
+    MY_HOST = socket.gethostbyname(socket.gethostname())
+    YOUR_HOST = msg[2]
+    name_of_call = msg[1]
+    receiver = AudioReceiver(MY_HOST, 5555)
+    receive_thread = threading.Thread(target=receiver.start_server())
+
+    sender = AudioSender(YOUR_HOST, 9999)
+    sender_thread = threading.Thread(target=sender.start_stream())
+
+    receive_thread.start()
+    sender_thread.start()
+
+    window_of_call_aud = Toplevel()
+    window_of_call_aud.geometry("600x700")
+    window_of_call_aud.resizable(False, False)
+    window_of_call_aud.title("Audio call")
+    window_of_call_aud.configure(bg="#212121")
+    dark_title_bar(window_of_call_aud)
+
+    image_photo_call = IT.PhotoImage(file="work_files/def_user.png")
+
+    Label(window_of_call_aud, image=image_photo_call, bg="#212121", activebackground="#212121").place(
+        x=250, y=100)
+
+    who_call = Canvas(window_of_call_aud, bg="#2F2F38", width=596, height=40, borderwidth=0, bd=0,
+                      highlightbackground="#3A3A3A")
+    who_call.place(x=0, y=200)
+    who_call.create_text(298, 20, text=name_of_call, fill="#9E9E9E", font=("NTR", 24 * -1))
+
+    image_off_call = IT.PhotoImage(file="work_files/off_audio_call.png")
+
+    Button(window_of_call_aud, image=image_off_call, command=lambda: print("Hi"), relief='flat',
+           bg="#212121",
+           activebackground="#212121").place(x=260, y=575)
+
+    window_of_call_aud.mainloop()
+
+
+def river_of_call():
+
+    global in_call
+    global check_call
+    global msg
+
+    if check_call is True:
+        check_call = False
+        msg = msg.split("/start_audio/")
+        call_from_name = msg[2]
+        call_host = msg[1]
+        winning = Toplevel()
+        winning.geometry("600x700")
+        winning.resizable(False, False)
+        winning.title("Audio call")
+        winning.configure(bg="#212121")
+        dark_title_bar(winning)
+
+        image_yes_call = IT.PhotoImage(file="work_files/yes_call.png")
+        image_no_call = IT.PhotoImage(file="work_files/no_call.png")
+        image_photo_call = IT.PhotoImage(file="work_files/def_user.png")
+
+        def yes_call():
+            MY_HOST = socket.gethostbyname(socket.gethostname())
+            YOUR_HOST = call_host
+
+            s.send(bytes(call_from_name + "/yes_call/" + str(name) + "/yes_call/" + MY_HOST, "utf8"))
+
+            receiver = AudioReceiver(MY_HOST, 9999)
+            receive_thread = threading.Thread(target=receiver.start_server())
+
+            sender = AudioSender(YOUR_HOST, 5555)
+            sender_thread = threading.Thread(target=sender.start_stream())
+
+            receive_thread.start()
+            sender_thread.start()
+            winning.destroy()
+            window_of_call_aud = Toplevel()
+            window_of_call_aud.geometry("600x700")
+            window_of_call_aud.resizable(False, False)
+            window_of_call_aud.title("Audio call")
+            window_of_call_aud.configure(bg="#212121")
+            dark_title_bar(window_of_call_aud)
+
+            who_talk_img = Label(window_of_call_aud, image=image_photo_call, bg="#212121",
+                  activebackground="#212121")
+            who_talk_img.image = image_photo_call
+            who_talk_img.place(x=250, y=100)
+
+            person_call = Canvas(window_of_call_aud, bg="#2F2F38", width=596, height=40, borderwidth=0,
+                                 bd=0,
+                                 highlightbackground="#3A3A3A")
+            person_call.place(x=0, y=200)
+            person_call.create_text(298, 20, text=call_from_name, fill="#9E9E9E", font=("NTR", 24 * -1))
+
+            image_off_call = IT.PhotoImage(file="work_files/off_audio_call.png")
+
+            Button(window_of_call_aud, image=image_off_call, command=lambda: print("Hi"), relief='flat',
+                   bg="#212121",
+                   activebackground="#212121").place(x=260, y=575)
+
+            window_of_call_aud.mainloop()
+
+        def no_call():
+            pass
+
+        Button(winning, image=image_yes_call, command=yes_call,
+               relief='flat', bg="#212121", activebackground="#212121").place(x=0, y=575)
+        Button(winning, image=image_no_call, command=no_call,
+               relief='flat', bg="#212121", activebackground="#212121").place(x=515, y=575)
+
+        Label(winning, image=image_photo_call, bg="#212121", activebackground="#212121").place(x=250, y=100)
+
+        who_call = Canvas(winning, bg="#2F2F38", width=596, height=40, borderwidth=0, bd=0,
+                          highlightbackground="#3A3A3A")
+        who_call.place(x=0, y=200)
+        who_call.create_text(298, 20, text=call_from_name, fill="#9E9E9E", font=("NTR", 24 * -1))
+
+        winning.mainloop()
+
+    elif in_call is True:
+        in_call = False
+        start_call_aud()
+
+    else:
+        main_win.after(1000, river_of_call)
 
 
 def receive():
     global client_list
+    global msg
+    global check_call
+    global in_call
+    global you_start_call
 
     Ben = True
     full_number = None
@@ -418,7 +559,6 @@ def receive():
     f = None
 
     while True:
-
         try:
             if Ben is True:
 
@@ -536,131 +676,31 @@ def receive():
 
                 elif "/start_audio/" in msg:
 
-                    msg = msg.split("/start_audio/")
-                    call_from_name = msg[2]
-                    call_host = msg[1]
-                    winning = Toplevel()
-                    winning.geometry("600x700")
-                    winning.resizable(False, False)
-                    winning.title("Audio call")
-                    winning.configure(bg="#212121")
-                    dark_title_bar(winning)
-
-                    image_yes_call = IT.PhotoImage(file="work_files/yes_call.png")
-                    image_no_call = IT.PhotoImage(file="work_files/no_call.png")
-                    image_photo_call = IT.PhotoImage(file="work_files/def_user.png")
-
-                    def yes_call():
-
-                        MY_HOST = socket.gethostbyname(socket.gethostname())
-                        YOUR_HOST = call_host
-
-                        s.send(bytes(call_from_name + "/yes_call/" + str(name) + "/yes_call/" + MY_HOST, "utf8"))
-
-                        receiver = AudioReceiver(MY_HOST, 9999)
-                        receive_thread = threading.Thread(target=receiver.start_server())
-
-                        sender = AudioSender(YOUR_HOST, 5555)
-                        sender_thread = threading.Thread(target=sender.start_stream())
-
-                        receive_thread.start()
-                        sender_thread.start()
-                        winning.destroy()
-                        window_of_call_aud = tk.Tk()
-                        window_of_call_aud.geometry("600x700")
-                        window_of_call_aud.resizable(False, False)
-                        window_of_call_aud.title("Audio call")
-                        window_of_call_aud.configure(bg="#212121")
-                        dark_title_bar(window_of_call_aud)
-
-                        Label(window_of_call_aud, image=image_photo_call, bg="#212121",
-                              activebackground="#212121").place(x=250, y=100)
-
-                        person_call = Canvas(window_of_call_aud, bg="#2F2F38", width=596, height=40, borderwidth=0,
-                                             bd=0,
-                                             highlightbackground="#3A3A3A")
-                        person_call.place(x=0, y=200)
-                        person_call.create_text(298, 20, text="Egor", fill="#9E9E9E", font=("NTR", 24 * -1))
-
-                        image_off_call = IT.PhotoImage(file="work_files/off_audio_call.png")
-
-                        Button(window_of_call_aud, image=image_off_call, command=lambda: print("Hi"), relief='flat',
-                               bg="#212121",
-                               activebackground="#212121").place(x=260, y=575)
-
-                        window_of_call_aud.mainloop()
-
-                    def no_call():
-                        pass
-
-                    Button(winning, image=image_yes_call, command=yes_call,
-                           relief='flat', bg="#212121", activebackground="#212121").place(x=0, y=575)
-                    Button(winning, image=image_no_call, command=no_call,
-                           relief='flat', bg="#212121", activebackground="#212121").place(x=515, y=575)
-
-                    Label(winning, image=image_photo_call, bg="#212121", activebackground="#212121").place(x=250, y=100)
-
-                    who_call = Canvas(winning, bg="#2F2F38", width=596, height=40, borderwidth=0, bd=0,
-                                      highlightbackground="#3A3A3A")
-                    who_call.place(x=0, y=200)
-                    who_call.create_text(298, 20, text=call_from_name, fill="#9E9E9E", font=("NTR", 24 * -1))
-
-                    winning.mainloop()
+                    check_call = True
 
                 elif "/yes_call/" in msg:
 
-                    msg = msg.split("/yes_call/")
-                    MY_HOST = socket.gethostbyname(socket.gethostname())
-                    YOUR_HOST = msg[2]
-                    name_of_call = msg[1]
-                    receiver = AudioReceiver(MY_HOST, 5555)
-                    receive_thread = threading.Thread(target=receiver.start_server())
+                    if you_start_call is True:
 
-                    sender = AudioSender(YOUR_HOST, 9999)
-                    sender_thread = threading.Thread(target=sender.start_stream())
+                            you_start_call = False
+                            win_wait_call.destroy()
 
-                    receive_thread.start()
-                    sender_thread.start()
+                    in_call = True
 
-                    window_of_call_aud = Toplevel()
-                    window_of_call_aud.geometry("600x700")
-                    window_of_call_aud.resizable(False, False)
-                    window_of_call_aud.title("Audio call")
-                    window_of_call_aud.configure(bg="#212121")
-                    dark_title_bar(window_of_call_aud)
+                else:
 
-                    image_photo_call = IT.PhotoImage(file="work_files/def_user.png")
+                    while full_number != 0:
+                        msg = s.recv(1024)
+                        f.write(msg)
+                        full_number -= 1
 
-                    Label(window_of_call_aud, image=image_photo_call, bg="#212121", activebackground="#212121").place(
-                        x=250, y=100)
+                    if other_number != 0:
+                        msg = s.recv(int(other_number))
+                        f.write(msg)
 
-                    who_call = Canvas(window_of_call_aud, bg="#2F2F38", width=596, height=40, borderwidth=0, bd=0,
-                                      highlightbackground="#3A3A3A")
-                    who_call.place(x=0, y=200)
-                    who_call.create_text(298, 20, text="Egor", fill="#9E9E9E", font=("NTR", 24 * -1))
+                    f.close()
 
-                    image_off_call = IT.PhotoImage(file="work_files/off_audio_call.png")
-
-                    Button(window_of_call_aud, image=image_off_call, command=lambda: print("Hi"), relief='flat',
-                           bg="#212121",
-                           activebackground="#212121").place(x=260, y=575)
-
-                    window_of_call_aud.mainloop()
-
-            else:
-
-                while full_number != 0:
-                    msg = s.recv(1024)
-                    f.write(msg)
-                    full_number -= 1
-
-                if other_number != 0:
-                    msg = s.recv(int(other_number))
-                    f.write(msg)
-
-                f.close()
-
-                Ben = True
+                    Ben = True
 
         except OSError:
             break
@@ -718,8 +758,38 @@ def new_dialog(event):
 
         def start_audio():
 
+            global win_wait_call
+            global you_start_call
+            you_start_call = True
+
             s.send(bytes(str(person + "/start_audio/" + socket.gethostbyname(socket.gethostname())) +
                          "/start_audio/" + str(name), "utf8"))
+
+            win_wait_call = Toplevel()
+            win_wait_call.geometry("600x700")
+            win_wait_call.resizable(False, False)
+            win_wait_call.title("Wait")
+            win_wait_call.configure(bg="#212121")
+            dark_title_bar(win_wait_call)
+
+            image_off_call = IT.PhotoImage(file="work_files/off_audio_call.png")
+            image_photo_call = IT.PhotoImage(file="work_files/def_user.png")
+
+            Label(win_wait_call, image=image_photo_call, bg="#212121", activebackground="#212121").place(x=250, y=100)
+
+            who_call = Canvas(win_wait_call, bg="#2F2F38", width=596, height=40, borderwidth=0, bd=0,
+                              highlightbackground="#3A3A3A")
+            who_call.place(x=0, y=200)
+            who_call.create_text(298, 20, text="Egor", fill="#9E9E9E", font=("NTR", 24 * -1))
+
+
+            Button(win_wait_call, image=image_off_call, command=lambda: print("Hi"), relief='flat', bg="#212121",
+                   activebackground="#212121").place(x=260, y=575)
+
+            Label(win_wait_call, text="Wait...", bg="#212121", activebackground="#212121", fg="#9E9E9E",
+                  font=("NTR", 40 * -1)).place(x=250, y=500)
+
+            win_wait_call.mainloop()
 
         main_win.bind("<Return>", send_e)
 
@@ -1033,6 +1103,7 @@ if name is not None or name != "":
 
 
     main_win.protocol("WM_EXIT", user_exit)
+    river_of_call()
     main_win.mainloop()
 
 s.close()

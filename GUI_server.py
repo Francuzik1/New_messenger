@@ -3,7 +3,6 @@ from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 import os.path
 list_name_to_client = {}
-exit_persons = []
 talk_with = {}
 if os.path.exists("sent") is False:
     os.mkdir("sent")
@@ -25,23 +24,28 @@ def accept_incoming_connections():
 def handle_client(client):  # Takes client socket as argument.
 
     global client_list
-    f = None
+
     name = client.recv(BUFSIZ).decode("utf8")
     client_list.append(name)
     msg = "/new_client_list " + ",".join(client_list)
     clients[client] = name
     list_name_to_client[name] = client
     broadcast(bytes(msg, "utf8"))
-    Ben = True
+
+    utf_msg = True
+    # file_size // 1024
     full_number = None
+    # file % 1024
     other_number = None
+
     while True:
         try:
-            if Ben is True:
+            if utf_msg is True:
 
                 msg = client.recv(BUFSIZ).decode("utf8")
                 print(msg)
 
+                # from person to person msg, find a client address to receive msg
                 if "abpers" in msg:
 
                     msg = msg.split("abpers")
@@ -49,7 +53,7 @@ def handle_client(client):  # Takes client socket as argument.
                     to_person = msg[2]
                     list_name_to_client[from_person].send(bytes("/abpers" + from_person + ": " + msg[1], "utf8"))
                     list_name_to_client[to_person].send(bytes("/abpers" + from_person + ": " + msg[1], "utf8"))
-
+                # receive invite group persons
                 elif "/create_new_group " in msg:
 
                     msg = msg.split(" ")[1]
@@ -60,7 +64,7 @@ def handle_client(client):  # Takes client socket as argument.
                     for i in msg:
 
                         list_name_to_client[i].send(bytes("/create_new_group " + group_name + "," + creator + "," + ",".join(msg), "utf8"))
-
+                # to find all client address to receive msg
                 elif "mes_group" in msg:
 
                     msg = msg.split("mes_group")
@@ -73,12 +77,14 @@ def handle_client(client):  # Takes client socket as argument.
                     for e in list_to_send:
                         list_name_to_client[e].send(bytes(group + "mes_group" + msg, "utf8"))
 
+                # inf about who receive bytes of file
                 elif "/talk_person" in msg:
                     msg = msg.split("/talk_person")
                     person_1 = msg[0]
                     person_2 = msg[1]
                     talk_with[person_1] = person_2
 
+                # inf about who receive bytes of file (all in groups)
                 elif "/talk_group" in msg:
 
                     msg = msg.split("/talk_group")
@@ -89,6 +95,7 @@ def handle_client(client):  # Takes client socket as argument.
                         persons = persons.split("\n")[0]
                     talk_with[name_file_creator] = name_file_creator + "/talk_group" + group + "/talk_group" + persons
 
+                # start receive bytes of file. Unit with talkwith ?
                 elif "/file_name" in msg:
 
                     full_number = None
@@ -97,8 +104,9 @@ def handle_client(client):  # Takes client socket as argument.
                     msg = msg.split("/file_name")
                     full_number = int(msg[0])
                     other_number = int(msg[1])
-                    Ben = False
+                    utf_msg = False
 
+                # start receive bytes of file (in group). Unit with talkwith ?
                 elif "/file_group" in msg:
 
                     full_number = None
@@ -117,18 +125,21 @@ def handle_client(client):  # Takes client socket as argument.
                     full_number = int(msg[0])
                     other_number = int(msg[1])
 
-                    Ben = False
+                    utf_msg = False
 
+                # delete!
                 elif "/start_audio/" in msg:
 
                     person_start_aud = msg.split("/start_audio/")
                     list_name_to_client[person_start_aud[0]].send(bytes(msg, "utf8"))
 
+                # delete!
                 elif "/yes_call/" in msg:
 
                     call_to = (msg.split("/yes_call/"))[0]
                     list_name_to_client[call_to].send(bytes(msg, "utf8"))
 
+            # only for bytes of files
             else:
 
                 if "/talk_group" not in talk_with[name]:
@@ -145,7 +156,7 @@ def handle_client(client):  # Takes client socket as argument.
                         msg = client.recv(int(other_number))
                         list_name_to_client[talk_with[name]].send(msg)
 
-                    Ben = True
+                    utf_msg = True
 
                 else:
 
@@ -165,7 +176,7 @@ def handle_client(client):  # Takes client socket as argument.
                         for i in persons_for_send:
                             list_name_to_client[i].send(msg)
 
-                    Ben = True
+                    utf_msg = True
 
         except Exception as e:
 
