@@ -24,6 +24,12 @@ you_start_call = False
 check_call = False
 in_call = False
 win_wait_call = None
+call_for = None
+call_for_you = None
+receiver = None
+sender = None
+window_of_call_aud = None
+name_of_call = None
 sub_win_r = Tk()
 
 sub_win_r.geometry("800x600")
@@ -416,85 +422,55 @@ groups = []
 msg = None
 
 
-def start_call_aud():
-    global msg
-
-    msg = msg.split("/yes_call/")
-    MY_HOST = socket.gethostbyname(socket.gethostname())
-    YOUR_HOST = msg[2]
-    name_of_call = msg[1]
-    receiver = AudioReceiver(MY_HOST, 5555)
-    receive_thread = threading.Thread(target=receiver.start_server())
-
-    sender = AudioSender(YOUR_HOST, 9999)
-    sender_thread = threading.Thread(target=sender.start_stream())
-
-    receive_thread.start()
-    sender_thread.start()
-
-    window_of_call_aud = Toplevel()
-    window_of_call_aud.geometry("600x700")
-    window_of_call_aud.resizable(False, False)
-    window_of_call_aud.title("Audio call")
-    window_of_call_aud.configure(bg="#212121")
-    dark_title_bar(window_of_call_aud)
-
-    image_photo_call = IT.PhotoImage(file="work_files/def_user.png")
-
-    Label(window_of_call_aud, image=image_photo_call, bg="#212121", activebackground="#212121").place(
-        x=250, y=100)
-
-    who_call = Canvas(window_of_call_aud, bg="#2F2F38", width=596, height=40, borderwidth=0, bd=0,
-                      highlightbackground="#3A3A3A")
-    who_call.place(x=0, y=200)
-    who_call.create_text(298, 20, text=name_of_call, fill="#9E9E9E", font=("NTR", 24 * -1))
-
-    image_off_call = IT.PhotoImage(file="work_files/off_audio_call.png")
-
-    Button(window_of_call_aud, image=image_off_call, command=lambda: print("Hi"), relief='flat',
-           bg="#212121",
-           activebackground="#212121").place(x=260, y=575)
-
-    window_of_call_aud.mainloop()
-
-
-def river_of_call():
-
+# receiver
+def incoming_calls():
     global in_call
     global check_call
     global msg
+    global call_for_you
+    global receiver
+    global sender
+    global name_of_call
+    global window_of_call_aud
 
     if check_call is True:
         check_call = False
         msg = msg.split("/start_audio/")
         call_from_name = msg[2]
+        name_of_call = call_from_name
         call_host = msg[1]
-        winning = Toplevel()
-        winning.geometry("600x700")
-        winning.resizable(False, False)
-        winning.title("Audio call")
-        winning.configure(bg="#212121")
-        dark_title_bar(winning)
+        call_for_you = Toplevel()
+        call_for_you.geometry("600x700")
+        call_for_you.resizable(False, False)
+        call_for_you.title("Audio call")
+        call_for_you.configure(bg="#212121")
+        dark_title_bar(call_for_you)
 
         image_yes_call = IT.PhotoImage(file="work_files/yes_call.png")
         image_no_call = IT.PhotoImage(file="work_files/no_call.png")
         image_photo_call = IT.PhotoImage(file="work_files/def_user.png")
 
         def yes_call():
+
+            global sender
+            global receiver
+            global window_of_call_aud
+            global name_of_call
+
             MY_HOST = socket.gethostbyname(socket.gethostname())
             YOUR_HOST = call_host
 
             s.send(bytes(call_from_name + "/yes_call/" + str(name) + "/yes_call/" + MY_HOST, "utf8"))
 
             receiver = AudioReceiver(MY_HOST, 9999)
-            receive_thread = threading.Thread(target=receiver.start_server())
+            receive_thread = threading.Thread(target=receiver.start_server)
 
             sender = AudioSender(YOUR_HOST, 5555)
-            sender_thread = threading.Thread(target=sender.start_stream())
+            sender_thread = threading.Thread(target=sender.start_stream)
 
             receive_thread.start()
             sender_thread.start()
-            winning.destroy()
+            call_for_you.destroy()
             window_of_call_aud = Toplevel()
             window_of_call_aud.geometry("600x700")
             window_of_call_aud.resizable(False, False)
@@ -503,7 +479,7 @@ def river_of_call():
             dark_title_bar(window_of_call_aud)
 
             who_talk_img = Label(window_of_call_aud, image=image_photo_call, bg="#212121",
-                  activebackground="#212121")
+                                 activebackground="#212121")
             who_talk_img.image = image_photo_call
             who_talk_img.place(x=250, y=100)
 
@@ -515,35 +491,83 @@ def river_of_call():
 
             image_off_call = IT.PhotoImage(file="work_files/off_audio_call.png")
 
-            Button(window_of_call_aud, image=image_off_call, command=lambda: print("Hi"), relief='flat',
+            def stop_call_now():
+                window_of_call_aud.destroy()
+                sender.stop_stream()
+                s.send(bytes(name_of_call + "/stop_sender/" + name, "utf8"))
+
+            Button(window_of_call_aud, image=image_off_call, command=stop_call_now, relief='flat',
                    bg="#212121",
                    activebackground="#212121").place(x=260, y=575)
 
             window_of_call_aud.mainloop()
 
         def no_call():
-            pass
+            call_for_you.destroy()
+            s.send(bytes(call_from_name + "/stop_call_me/", "utf8"))
 
-        Button(winning, image=image_yes_call, command=yes_call,
+        Button(call_for_you, image=image_yes_call, command=yes_call,
                relief='flat', bg="#212121", activebackground="#212121").place(x=0, y=575)
-        Button(winning, image=image_no_call, command=no_call,
+        Button(call_for_you, image=image_no_call, command=no_call,
                relief='flat', bg="#212121", activebackground="#212121").place(x=515, y=575)
 
-        Label(winning, image=image_photo_call, bg="#212121", activebackground="#212121").place(x=250, y=100)
+        Label(call_for_you, image=image_photo_call, bg="#212121", activebackground="#212121").place(x=250, y=100)
 
-        who_call = Canvas(winning, bg="#2F2F38", width=596, height=40, borderwidth=0, bd=0,
+        who_call = Canvas(call_for_you, bg="#2F2F38", width=596, height=40, borderwidth=0, bd=0,
                           highlightbackground="#3A3A3A")
         who_call.place(x=0, y=200)
         who_call.create_text(298, 20, text=call_from_name, fill="#9E9E9E", font=("NTR", 24 * -1))
 
-        winning.mainloop()
+        Thread(target=incoming_calls, daemon=True).start()
+        call_for_you.mainloop()
 
     elif in_call is True:
         in_call = False
-        start_call_aud()
+        # sender
 
-    else:
-        main_win.after(1000, river_of_call)
+        msg = msg.split("/yes_call/")
+        MY_HOST = socket.gethostbyname(socket.gethostname())
+        YOUR_HOST = msg[2]
+        name_of_call = msg[1]
+        receiver = AudioReceiver(MY_HOST, 5555)
+        receive_thread = threading.Thread(target=receiver.start_server)
+
+        sender = AudioSender(YOUR_HOST, 9999)
+        sender_thread = threading.Thread(target=sender.start_stream)
+
+        receive_thread.start()
+        sender_thread.start()
+
+        window_of_call_aud = Toplevel()
+        window_of_call_aud.geometry("600x700")
+        window_of_call_aud.resizable(False, False)
+        window_of_call_aud.title("Audio call")
+        window_of_call_aud.configure(bg="#212121")
+        dark_title_bar(window_of_call_aud)
+
+        image_photo_call = IT.PhotoImage(file="work_files/def_user.png")
+
+        Label(window_of_call_aud, image=image_photo_call, bg="#212121", activebackground="#212121").place(
+            x=250, y=100)
+
+        who_call = Canvas(window_of_call_aud, bg="#2F2F38", width=596, height=40, borderwidth=0, bd=0,
+                          highlightbackground="#3A3A3A")
+        who_call.place(x=0, y=200)
+        who_call.create_text(298, 20, text=name_of_call, fill="#9E9E9E", font=("NTR", 24 * -1))
+
+        image_off_call = IT.PhotoImage(file="work_files/off_audio_call.png")
+
+        def stop_call_now():
+                s.send(bytes(name_of_call + "/stop_call_other/", "utf8"))
+
+        Button(window_of_call_aud, image=image_off_call, command=stop_call_now, relief='flat',
+               bg="#212121",
+               activebackground="#212121").place(x=260, y=575)
+
+        Thread(target=incoming_calls, daemon=True).start()
+        window_of_call_aud.mainloop()
+
+    main_win.after(1000, incoming_calls)
 
 
 def receive():
@@ -552,6 +576,7 @@ def receive():
     global check_call
     global in_call
     global you_start_call
+    global name_of_call
 
     Ben = True
     full_number = None
@@ -681,11 +706,44 @@ def receive():
                 elif "/yes_call/" in msg:
 
                     if you_start_call is True:
-
-                            you_start_call = False
-                            win_wait_call.destroy()
+                        you_start_call = False
+                        win_wait_call.destroy()
 
                     in_call = True
+                elif "/stop_calling/" in msg:
+
+                    call_for_you.destroy()
+
+                elif "/stop_sender/" in msg:
+
+                    msg = msg.split("/stop_sender/")
+                    sender.stop_stream()
+                    s.send(bytes(msg[1] + "/stop_reciver/" + msg[0], "utf8"))
+
+                elif "/stop_reciver/" in msg:
+
+                    msg = (msg.split("/stop_reciver/"))[1]
+                    receiver.stop_server()
+                    s.send(bytes(msg + "/stop_last_recive/", "utf8"))
+
+                    window_of_call_aud.destroy()
+
+                elif "/stop_last_recive/" in msg:
+
+                    window_of_call_aud.destroy()
+                    receiver.stop_server()
+
+                elif "/stop_call_me" in msg:
+
+                    in_call = False
+                    you_start_call = False
+                    win_wait_call.destroy()
+
+                elif "/stop_call_other/" in msg:
+
+                    window_of_call_aud.destroy()
+                    sender.stop_stream()
+                    s.send(bytes(name_of_call + "/stop_sender/" + name, "utf8"))
 
                 else:
 
@@ -760,7 +818,9 @@ def new_dialog(event):
 
             global win_wait_call
             global you_start_call
+            global call_for
             you_start_call = True
+            call_for = person
 
             s.send(bytes(str(person + "/start_audio/" + socket.gethostbyname(socket.gethostname())) +
                          "/start_audio/" + str(name), "utf8"))
@@ -780,10 +840,13 @@ def new_dialog(event):
             who_call = Canvas(win_wait_call, bg="#2F2F38", width=596, height=40, borderwidth=0, bd=0,
                               highlightbackground="#3A3A3A")
             who_call.place(x=0, y=200)
-            who_call.create_text(298, 20, text="Egor", fill="#9E9E9E", font=("NTR", 24 * -1))
+            who_call.create_text(298, 20, text=person, fill="#9E9E9E", font=("NTR", 24 * -1))
 
+            def stop_calling():
+                win_wait_call.destroy()
+                s.send(bytes(call_for + "/stop_calling/", "utf8"))
 
-            Button(win_wait_call, image=image_off_call, command=lambda: print("Hi"), relief='flat', bg="#212121",
+            Button(win_wait_call, image=image_off_call, command=stop_calling, relief='flat', bg="#212121",
                    activebackground="#212121").place(x=260, y=575)
 
             Label(win_wait_call, text="Wait...", bg="#212121", activebackground="#212121", fg="#9E9E9E",
@@ -1094,16 +1157,17 @@ sb_2.place(x=885, y=102, height=558)
 
 dialog_window.place(x=400, y=98)
 
-receive_thread = Thread(target=receive)
+receive_thread = Thread(target=receive, daemon=True)
 receive_thread.start()
 
 if name is not None or name != "":
     def user_exit():
         s.send(bytes("/user_exit " + str(name), "utf8"))
+        sys.exit()
 
 
     main_win.protocol("WM_EXIT", user_exit)
-    river_of_call()
+    incoming_calls()
     main_win.mainloop()
 
 s.close()

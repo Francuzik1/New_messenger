@@ -139,6 +139,41 @@ def handle_client(client):  # Takes client socket as argument.
                     call_to = (msg.split("/yes_call/"))[0]
                     list_name_to_client[call_to].send(bytes(msg, "utf8"))
 
+                elif "/stop_calling/" in msg:
+
+                    person_for_stop = msg.split("/stop_calling/")[0]
+                    list_name_to_client[person_for_stop].send(bytes(msg, "utf8"))
+
+                elif "/stop_sender/" in msg:
+
+                    person_for_stop = msg.split("/stop_sender/")[0]
+                    list_name_to_client[person_for_stop].send(bytes(msg, "utf8"))
+
+                elif "/stop_reciver/" in msg:
+
+                    person_for_stop = msg.split("/stop_reciver/")[0]
+                    list_name_to_client[person_for_stop].send(bytes(msg, "utf8"))
+
+                elif "/stop_last_recive/" in msg:
+
+                    person_for_stop = msg.split("/stop_last_recive/")[0]
+                    list_name_to_client[person_for_stop].send(bytes(msg, "utf8"))
+
+                elif "/stop_call_me/" in msg:
+
+                    person_for_stop_call = msg.split("/stop_call_me/")[0]
+                    list_name_to_client[person_for_stop_call].send(bytes(msg, "utf8"))
+
+                elif "/ok_stop_call/" in msg:
+
+                    person_for_stop_call = msg.split("/ok_stop_call/")[0]
+                    list_name_to_client[person_for_stop_call].send(bytes(msg, "utf8"))
+
+                elif "/stop_call_other/" in msg:
+
+                    person_for_stop_call = msg.split("/stop_call_other/")[0]
+                    list_name_to_client[person_for_stop_call].send(bytes(msg, "utf8"))
+
             # only for bytes of files
             else:
 
