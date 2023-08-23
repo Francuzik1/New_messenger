@@ -13,7 +13,6 @@ from vidstream import AudioSender
 from vidstream import AudioReceiver
 import threading
 
-
 you_start_call = False
 check_call = False
 in_call = False
@@ -223,8 +222,10 @@ def up_select_win():
 
         if person not in groups:
 
-            work_socket.send(bytes(str(fullNumber1024) + "/fileName" + str(fileRemainder) + "/fileName" + file_name_var
-                                   + "/fileName" + str(name), "utf8"))
+            personal_file_configuration = str(fullNumber1024) + "/fileName" + str(fileRemainder) + "/fileName" \
+                                          + file_name_var + "/fileName" + str(name)
+            work_socket.send(bytes(json.dumps({"type": "personal_file_configuration",
+                                               "msg": personal_file_configuration}), "utf8"))
 
             if os.path.exists("story\\" + str(name) + " " + str(person) + ".txt") is False:
 
@@ -240,8 +241,10 @@ def up_select_win():
 
         else:
 
-            work_socket.send(bytes(str(fullNumber1024) + "/file_group" + str(fileRemainder) + "/file_group" + file_name_var
-                                   + "/file_group" + str(name) + "/file_group" + str(person), "utf8"))
+            group_file_configuration = str(fullNumber1024) + "/file_group" + str(fileRemainder) + "/file_group" \
+                                       + file_name_var + "/file_group" + str(name) + "/file_group" + str(person)
+            work_socket.send(
+                bytes(json.dumps({"type": "group_file_configuration", "msg": group_file_configuration}), "utf8"))
 
             if os.path.exists("groups\\" + str(person) + ".txt") is False:
 
@@ -301,9 +304,9 @@ def up_select_win():
     searcher_style.configure("Vertical.TScrollbar", background="#3A3A3A", troughcolor="#2F2F38", activebackground="red")
 
     cursorSelect = tk.Listbox(win, bg="#2F2F38", fg="#C1C1C1", font=("Rajdhani Regular", 20 * -1),
-                          selectbackground="#77B5FE", selectmode=SINGLE, borderwidth=5, highlightthickness=5,
-                          height=22, width=40, relief=GROOVE, bd=0, highlightbackground="#3A3A3A",
-                          highlightcolor="#3A3A3A", yscrollcommand=sb_WorkDirs.set)
+                              selectbackground="#77B5FE", selectmode=SINGLE, borderwidth=5, highlightthickness=5,
+                              height=22, width=40, relief=GROOVE, bd=0, highlightbackground="#3A3A3A",
+                              highlightcolor="#3A3A3A", yscrollcommand=sb_WorkDirs.set)
 
     sb_WorkDirs.config(command=cursorSelect.yview)
     image_back = IT.PhotoImage(file="work_files/back_button.png")
@@ -339,7 +342,7 @@ def up_select_win():
     cursorSelect.bind("<Double-Button-1>", new_iteration)
     sb_file_road = ttk.Scrollbar(win, orient='horizontal')
     folder_info = Listbox(win, height=1, width=35, bg="#2F2F38", bd=0, font=("NTR", 15 * -1), fg="#77B5FE",
-                           xscrollcommand=sb_file_road.set, highlightbackground="#3A3A3A", highlightcolor="#3A3A3A")
+                          xscrollcommand=sb_file_road.set, highlightbackground="#3A3A3A", highlightcolor="#3A3A3A")
     folder_info.place(x=23, y=260)
     sb_file_road.place(x=21, y=280, width=284)
     sb_file_road.config(command=folder_info.xview)
@@ -373,7 +376,12 @@ def host_port():
         entry_2.delete(0, END)
 
 
+def if_no_host_port():
+    sys.exit()
+
+
 sub_win_host_port.bind("<Return>", host_port_e)
+sub_win_host_port.protocol("WM_DELETE_WINDOW", if_no_host_port)
 sub_win_host_port.mainloop()
 
 with open('config.json') as f:
@@ -390,7 +398,7 @@ except Exception as e:
     print(e)
     sys.exit()
 
-clientList = []
+client_list = []
 
 groupMode = False
 
@@ -456,7 +464,8 @@ def incoming_calls():
             MY_WORK_HOST = socket.gethostbyname(socket.gethostname())
             YOUR_WORK_HOST = call_host
 
-            work_socket.send(bytes(call_from_name + "/yes_call/" + str(name) + "/yes_call/" + MY_WORK_HOST, "utf8"))
+            connect_to_aud_call = call_from_name + "/yes_call/" + str(name) + "/yes_call/" + MY_WORK_HOST
+            work_socket.send(bytes(json.dumps({"type": "connect_to_aud_call", "msg": connect_to_aud_call}), "utf8"))
 
             receiver = AudioReceiver(MY_WORK_HOST, 9999)
             receiver_thread = threading.Thread(target=receiver.start_server)
@@ -490,7 +499,8 @@ def incoming_calls():
             def stop_call_now():
                 window_of_call_aud.destroy()
                 sender.stop_stream()
-                work_socket.send(bytes(name_of_call + "/stop_sender/" + name, "utf8"))
+                stop_aud_sender = call_from_name + "/stop_sender/" + name
+                work_socket.send(bytes(json.dumps({"type": "stop_aud_sender", "msg": stop_aud_sender}), "utf8"))
 
             Button(window_of_call_aud, image=image_off_call, command=stop_call_now, relief='flat',
                    bg="#212121",
@@ -500,7 +510,9 @@ def incoming_calls():
 
         def no_call():
             call_for_you.destroy()
-            work_socket.send(bytes(call_from_name + "/stop_call_me/", "utf8"))
+            reject_call = call_from_name + "/stop_call_me/"
+
+            work_socket.send(bytes(json.dumps({"type": "reject_call", "msg": reject_call}), "utf8"))
 
         Button(call_for_you, image=image_yes_call, command=yes_call,
                relief='flat', bg="#212121", activebackground="#212121").place(x=0, y=575)
@@ -554,7 +566,9 @@ def incoming_calls():
         image_off_call = IT.PhotoImage(file="work_files/off_audio_call.png")
 
         def stop_call_now():
-                work_socket.send(bytes(name_of_call + "/stop_call_other/", "utf8"))
+            stop_aud_call_from_receiver = name_of_call + "/stop_call_other/"
+            work_socket.send(bytes(json.dumps({"type": "stop_aud_call_from_receiver",
+                                               "msg": stop_aud_call_from_receiver}), "utf8"))
 
         Button(window_of_call_aud, image=image_off_call, command=stop_call_now, relief='flat',
                bg="#212121",
@@ -567,7 +581,7 @@ def incoming_calls():
 
 
 def receive():
-    global clientList
+    global client_list
     global msg
     global check_call
     global in_call
@@ -713,13 +727,17 @@ def receive():
 
                     msg = msg.split("/stop_sender/")
                     sender.stop_stream()
-                    work_socket.send(bytes(msg[1] + "/stop_reciver/" + msg[0], "utf8"))
+                    stop_aud_receiver_person1 = msg[1] + "/stop_reciver/" + msg[0]
+                    work_socket.send(bytes(json.dumps({"type": "stop_aud_receiver_person1",
+                                                       "msg": stop_aud_receiver_person1}), "utf8"))
 
                 elif "/stop_reciver/" in msg:
 
                     msg = (msg.split("/stop_reciver/"))[1]
                     receiver.stop_server()
-                    work_socket.send(bytes(msg + "/stop_last_recive/", "utf8"))
+                    stop_aud_receiver_person2 = msg + "/stop_last_recive/"
+                    work_socket.send(bytes(json.dumps({"type": "stop_aud_receiver_person2",
+                                                       "msg": stop_aud_receiver_person2}), "utf8"))
 
                     window_of_call_aud.destroy()
 
@@ -738,7 +756,8 @@ def receive():
 
                     window_of_call_aud.destroy()
                     sender.stop_stream()
-                    work_socket.send(bytes(name_of_call + "/stop_sender/" + name, "utf8"))
+                    stop_aud_sender = name_of_call + "/stop_sender/" + name
+                    work_socket.send(bytes(json.dumps({"type": "stop_aud_sender", "msg": stop_aud_sender}), "utf8"))
 
                 else:
 
@@ -800,13 +819,15 @@ def new_dialog(event):
             mes = entry_send.get()
 
             if mes is not None and mes != "" and person is not None and person != "":
-                work_socket.send(bytes(str(name + "abpers" + mes + "abpers" + person), "utf8"))
+                personal_msg = name + "abpers" + mes + "abpers" + person
+                work_socket.send(bytes(json.dumps({"type": "personal_msg", "msg": personal_msg}), "utf8"))
                 entry_send.delete(0, END)
                 dialog_window.yview_moveto(1)
 
         def send_file():
 
-            work_socket.send(bytes(str(name) + "/talk_person" + person, "utf8"))
+            person_get_file = str(name) + "/talk_person" + person
+            work_socket.send(bytes(json.dumps({"type": "person_get_file", "msg": person_get_file}), "utf8"))
             up_select_win()
 
         def start_audio():
@@ -817,8 +838,9 @@ def new_dialog(event):
             you_start_call = True
             callForPerson = person
 
-            work_socket.send(bytes(str(person + "/start_audio/" + socket.gethostbyname(socket.gethostname())) +
-                         "/start_audio/" + str(name), "utf8"))
+            start_aud_call = str(person + "/start_audio/" + socket.gethostbyname(socket.gethostname())) + \
+                             "/start_audio/" + str(name)
+            work_socket.send(bytes(json.dumps({"type": "start_aud_call", "msg": start_aud_call}), "utf8"))
 
             win_wait_call = Toplevel()
             win_wait_call.geometry("600x700")
@@ -833,13 +855,14 @@ def new_dialog(event):
             Label(win_wait_call, image=image_photo_call, bg="#212121", activebackground="#212121").place(x=250, y=100)
 
             whoCall = Canvas(win_wait_call, bg="#2F2F38", width=596, height=40, borderwidth=0, bd=0,
-                              highlightbackground="#3A3A3A")
+                             highlightbackground="#3A3A3A")
             whoCall.place(x=0, y=200)
             whoCall.create_text(298, 20, text=person, fill="#9E9E9E", font=("NTR", 24 * -1))
 
             def stop_calling():
                 win_wait_call.destroy()
-                work_socket.send(bytes(callForPerson + "/stop_calling/", "utf8"))
+                stop_aud_calling = callForPerson + "/stop_calling/"
+                work_socket.send(bytes(json.dumps({"type": "stop_aud_calling", "msg": stop_aud_calling}), "utf8"))
 
             Button(win_wait_call, image=image_off_call, command=stop_calling, relief='flat', bg="#212121",
                    activebackground="#212121").place(x=260, y=575)
@@ -905,7 +928,8 @@ def new_dialog(event):
                 with open("groups\\" + person + ".txt", "r") as f:
                     lines = f.readlines()
                     persons = lines[0]
-                work_socket.send(bytes(str(person + "mes_group" + persons + "mes_group" + str(name) + ": " + mes), "utf8"))
+                group_msg = person + "mes_group" + persons + "mes_group" + str(name) + ": " + mes
+                work_socket.send(bytes(json.dumps({"type": "group_msg", "msg": group_msg}), "utf8"))
             entry_send.delete(0, END)
             dialog_window.yview_moveto(1)
 
@@ -914,7 +938,9 @@ def new_dialog(event):
             with open("groups\\" + person + ".txt", "r") as groupStory:
                 lines = groupStory.readlines()
                 persons = lines[0]
-            work_socket.send(bytes(str(name) + "/talk_group" + person + "/talk_group" + persons, "utf8"))
+
+            group_get_file = str(name) + "/talk_group" + person + "/talk_group" + persons
+            work_socket.send(bytes(json.dumps({"type": "group_get_file", "msg": group_get_file}), "utf8"))
 
             up_select_win()
 
@@ -974,10 +1000,9 @@ def new_dialog(event):
                         person_list.insert(0, group_name_var)
                         dialog_window.delete(0, END)
                         groupMode = False
-                        work_socket.send(
-                            bytes(
-                                "/create_new_group " + group_name_var + "," + str(name) + "," + ",".join(listOfGroup),
-                                "utf8"))
+                        person_get_file = "/create_new_group " + group_name_var + "," + str(name) + "," + \
+                                          ",".join(listOfGroup)
+                        work_socket.send(bytes(json.dumps({"type": "person_get_file", "msg": person_get_file}), "utf8"))
                         listOfGroup = []
                         btn_send.destroy()
                         win_name_group.destroy()
@@ -1155,7 +1180,7 @@ dialog_window.place(x=400, y=98)
 receive_thread = Thread(target=receive, daemon=True)
 receive_thread.start()
 
-if name is not None or name != "":
+if name is not None and name != "":
     def user_exit():
         work_socket.send(bytes("/user_exit " + str(name), "utf8"))
         sys.exit()

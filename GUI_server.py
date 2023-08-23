@@ -4,218 +4,219 @@ import os.path
 import re
 
 
-nameToClientList = {}
-talkWithList = {}
+name_to_clientList = {}
+talk_with_list = {}
 if os.path.exists("sent") is False:
     os.mkdir("sent")
 
 
-def accept_incoming_connections():
+def main():
+    enter_host_port()
+    SERVER.listen(5)
+    print("Waiting for connection...")
+    ACCEPT_THREAD = Thread(target=init_server, daemon=True)
+    ACCEPT_THREAD.start()
+    ACCEPT_THREAD.join()
+
+
+def init_server():
 
     while True:
 
         client, client_address = SERVER.accept()
         addresses[client] = client_address
-        msg = "/new_client_list " + ",".join(clientList)
+        msg = "/new_client_list " + ",".join(client_list)
         client.send(bytes(msg, "utf8"))
         Thread(target=handle_client, args=(client,), daemon=True).start()
 
 
 def handle_client(client):  # Takes client socket as argument.
 
-    global clientList
+    global client_list
 
-    name = client.recv(BUFSIZ).decode("utf8")
-    clientList.append(name)
-    msg = "/new_client_list " + ",".join(clientList)
+    name = client.recv(BUF_SIZE).decode("utf8")
+    client_list.append(name)
+    msg = "/new_client_list " + ",".join(client_list)
     clients[client] = name
-    nameToClientList[name] = client
+    name_to_clientList[name] = client
     broadcast(bytes(msg, "utf8"))
 
-    utfMode = True
+    is_text_msg = True
     # file_size // 1024
-    fullNumber1024 = None
+    file_size = None
     # file - file_size * 1024
-    fileRemainder = None
+    file_remainder = None
 
     while True:
         try:
-            if utfMode is True:
+            if is_text_msg is True:
 
-                msg = client.recv(BUFSIZ).decode("utf8")
+                msg = client.recv(BUF_SIZE).decode("utf8")
+                msg = eval(msg)
+                msg_type = msg["type"]
+                msg = msg["msg"]
                 print(msg)
 
-                # from person to person msg, find a client address to receive msg
-                if "abpers" in msg:
+                match msg_type:
 
-                    msg = msg.split("abpers")
-                    from_person = msg[0]
-                    to_person = msg[2]
-                    nameToClientList[from_person].send(bytes("/abpers" + from_person + ": " + msg[1], "utf8"))
-                    nameToClientList[to_person].send(bytes("/abpers" + from_person + ": " + msg[1], "utf8"))
-                # receive invite group persons
-                elif "/create_new_group " in msg:
+                    case "personal_msg":
 
-                    msg = msg.split(" ")[1]
-                    msg = msg.split(",")
-                    group_name = msg.pop(0)
-                    creator = msg.pop(0)
+                        msg = msg.split("abpers")
+                        from_person = msg[0]
+                        to_person = msg[2]
+                        name_to_clientList[from_person].send(bytes("/abpers" + from_person + ": " + msg[1], "utf8"))
+                        name_to_clientList[to_person].send(bytes("/abpers" + from_person + ": " + msg[1], "utf8"))
 
-                    for i in msg:
+                    case "create_new_group":
 
-                        nameToClientList[i].send(bytes("/create_new_group " + group_name + "," + creator + "," + ",".join(msg), "utf8"))
-                # to find all client address to receive msg
-                elif "mes_group" in msg:
+                        msg = msg.split(" ")[1]
+                        msg = msg.split(",")
+                        group_name = msg.pop(0)
+                        creator = msg.pop(0)
 
-                    msg = msg.split("mes_group")
-                    list_to_send = msg[1]
-                    group = msg[0]
-                    msg = msg[2]
-                    if "\n" in list_to_send:
-                        list_to_send = list_to_send.split("\n")[0]
-                    list_to_send = list_to_send.split(",")
-                    for e in list_to_send:
-                        nameToClientList[e].send(bytes(group + "mes_group" + msg, "utf8"))
+                        for i in msg:
+                            name_to_clientList[i].send(
+                                bytes("/create_new_group " + group_name + "," + creator + "," + ",".join(msg), "utf8"))
 
-                # inf about who receive bytes of file
-                elif "/talk_person" in msg:
-                    msg = msg.split("/talk_person")
-                    person_1 = msg[0]
-                    person_2 = msg[1]
-                    talkWithList[person_1] = person_2
+                    case "group_msg":
 
-                # inf about who receive bytes of file (all in groups)
-                elif "/talk_group" in msg:
+                        msg = msg.split("mes_group")
+                        list_to_send = msg[1]
+                        group = msg[0]
+                        msg = msg[2]
+                        if "\n" in list_to_send:
+                            list_to_send = list_to_send.split("\n")[0]
+                        list_to_send = list_to_send.split(",")
+                        for e in list_to_send:
+                            name_to_clientList[e].send(bytes(group + "mes_group" + msg, "utf8"))
 
-                    msg = msg.split("/talk_group")
-                    group = msg[1]
-                    persons = msg[2]
-                    name_file_creator = msg[0]
-                    if "\n" in persons:
-                        persons = persons.split("\n")[0]
-                    talkWithList[name_file_creator] = name_file_creator + "/talk_group" + group + "/talk_group" + persons
+                    case "person_get_file":
 
-                # start receive bytes of file. Unit with talkwith ?
-                elif "/file_name" in msg:
+                        msg = msg.split("/talk_person")
+                        person_1 = msg[0]
+                        person_2 = msg[1]
+                        talk_with_list[person_1] = person_2
 
-                    nameToClientList[talkWithList[name]].send(bytes(msg, "utf8"))
-                    msg = msg.split("/file_name")
-                    fullNumber1024 = int(msg[0])
-                    fileRemainder = int(msg[1])
+                    case "group_get_file":
 
-                    utfMode = False
+                        msg = msg.split("/talk_group")
+                        group = msg[1]
+                        persons = msg[2]
+                        name_file_creator = msg[0]
+                        if "\n" in persons:
+                            persons = persons.split("\n")[0]
+                        talk_with_list[name_file_creator] = name_file_creator + "/talk_group" + group + "/talk_group" + \
+                                                            persons
 
-                # start receive bytes of file (in group). Unit with talkwith ?
-                elif "/file_group" in msg:
+                    case "personal_file_configuration":
 
-                    persons_for_send = ((talkWithList[name].split("/talk_group"))[2]).split(",")
+                        name_to_clientList[talk_with_list[name]].send(bytes(msg, "utf8"))
+                        msg = msg.split("/file_name")
+                        file_size = int(msg[0])
+                        file_remainder = int(msg[1])
 
-                    if name in persons_for_send:
+                        is_text_msg = False
 
-                        persons_for_send.remove(name)
+                    case "group_file_configuration":
+                        persons_for_send = ((talk_with_list[name].split("/talk_group"))[2]).split(",")
 
-                    for i in persons_for_send:
+                        if name in persons_for_send:
 
-                        nameToClientList[i].send(bytes(msg, "utf8"))
+                            persons_for_send.remove(name)
 
-                    msg = msg.split("/file_group")
-                    fullNumber1024 = int(msg[0])
-                    fileRemainder = int(msg[1])
+                        for i in persons_for_send:
 
-                    utfMode = False
+                            name_to_clientList[i].send(bytes(msg, "utf8"))
 
-                # delete!
-                elif "/start_audio/" in msg:
+                        msg = msg.split("/file_group")
+                        file_size = int(msg[0])
+                        file_remainder = int(msg[1])
 
-                    person_start_aud = msg.split("/start_audio/")
-                    nameToClientList[person_start_aud[0]].send(bytes(msg, "utf8"))
+                        is_text_msg = False
 
-                # delete!
-                elif "/yes_call/" in msg:
+                    case "start_aud_call":
+                        person_start_aud = msg.split("/start_audio/")
+                        name_to_clientList[person_start_aud[0]].send(bytes(msg, "utf8"))
 
-                    call_to = (msg.split("/yes_call/"))[0]
-                    nameToClientList[call_to].send(bytes(msg, "utf8"))
+                    case "connect_to_aud_call":
 
-                elif "/stop_calling/" in msg:
+                        call_to = (msg.split("/yes_call/"))[0]
+                        name_to_clientList[call_to].send(bytes(msg, "utf8"))
 
-                    person_for_stop = msg.split("/stop_calling/")[0]
-                    nameToClientList[person_for_stop].send(bytes(msg, "utf8"))
+                    case "stop_aud_calling":
 
-                elif "/stop_sender/" in msg:
+                        person_for_stop = msg.split("/stop_calling/")[0]
+                        name_to_clientList[person_for_stop].send(bytes(msg, "utf8"))
 
-                    person_for_stop = msg.split("/stop_sender/")[0]
-                    nameToClientList[person_for_stop].send(bytes(msg, "utf8"))
+                    case "stop_aud_sender":
 
-                elif "/stop_reciver/" in msg:
+                        person_for_stop = msg.split("/stop_sender/")[0]
+                        name_to_clientList[person_for_stop].send(bytes(msg, "utf8"))
 
-                    person_for_stop = msg.split("/stop_reciver/")[0]
-                    nameToClientList[person_for_stop].send(bytes(msg, "utf8"))
+                    case "stop_aud_receiver_person1":
+                        person_for_stop = msg.split("/stop_reciver/")[0]
+                        name_to_clientList[person_for_stop].send(bytes(msg, "utf8"))
 
-                elif "/stop_last_recive/" in msg:
+                    case "stop_aud_receiver_person2":
 
-                    person_for_stop = msg.split("/stop_last_recive/")[0]
-                    nameToClientList[person_for_stop].send(bytes(msg, "utf8"))
+                        person_for_stop = msg.split("/stop_last_recive/")[0]
+                        name_to_clientList[person_for_stop].send(bytes(msg, "utf8"))
 
-                elif "/stop_call_me/" in msg:
+                    case "reject_call":
 
-                    person_for_stop_call = msg.split("/stop_call_me/")[0]
-                    nameToClientList[person_for_stop_call].send(bytes(msg, "utf8"))
+                        person_for_stop_call = msg.split("/stop_call_me/")[0]
+                        name_to_clientList[person_for_stop_call].send(bytes(msg, "utf8"))
 
-                elif "/ok_stop_call/" in msg:
+                    case "stop_aud_call_from_receiver":
 
-                    person_for_stop_call = msg.split("/ok_stop_call/")[0]
-                    nameToClientList[person_for_stop_call].send(bytes(msg, "utf8"))
-
-                elif "/stop_call_other/" in msg:
-
-                    person_for_stop_call = msg.split("/stop_call_other/")[0]
-                    nameToClientList[person_for_stop_call].send(bytes(msg, "utf8"))
+                        person_for_stop_call = msg.split("/stop_call_other/")[0]
+                        name_to_clientList[person_for_stop_call].send(bytes(msg, "utf8"))
 
             # only for bytes of files
             else:
 
-                if "/talk_group" not in talkWithList[name]:
+                if "/talk_group" not in talk_with_list[name]:
 
-                    while fullNumber1024 != 0:
+                    while file_size != 0:
 
-                        msg = client.recv(BUFSIZ)
+                        msg = client.recv(BUF_SIZE)
 
-                        nameToClientList[talkWithList[name]].send(msg)
-                        fullNumber1024 -= 1
+                        name_to_clientList[talk_with_list[name]].send(msg)
+                        file_size -= 1
 
-                    if fileRemainder != 0:
+                    if file_remainder != 0:
 
-                        msg = client.recv(int(fileRemainder))
-                        nameToClientList[talkWithList[name]].send(msg)
+                        msg = client.recv(int(file_remainder))
+                        name_to_clientList[talk_with_list[name]].send(msg)
 
-                    utfMode = True
+                    is_text_msg = True
 
                 else:
 
-                    persons_for_send = ((talkWithList[name].split("/talk_group"))[2]).split(",")
+                    persons_for_send = ((talk_with_list[name].split("/talk_group"))[2]).split(",")
 
                     if name in persons_for_send:
                         persons_for_send.remove(name)
 
-                    while fullNumber1024 != 0:
-                        msg = client.recv(BUFSIZ)
+                    while file_size != 0:
+                        msg = client.recv(BUF_SIZE)
                         for i in persons_for_send:
-                            nameToClientList[i].send(msg)
-                        fullNumber1024 -= 1
+                            name_to_clientList[i].send(msg)
+                        file_size -= 1
 
-                    if fileRemainder != 0:
-                        msg = client.recv(int(fileRemainder))
+                    if file_remainder != 0:
+                        msg = client.recv(int(file_remainder))
                         for i in persons_for_send:
-                            nameToClientList[i].send(msg)
+                            name_to_clientList[i].send(msg)
 
-                    utfMode = True
+                    is_text_msg = True
 
         except Exception as e:
 
             print(f"[!] Error: {e}")
-            clientList.remove(name)
+            client_list.remove(name)
             del clients[client]
-            to_send = "/new_client_list " + ",".join(clientList)
+            to_send = "/new_client_list " + ",".join(client_list)
             broadcast(bytes(to_send, "utf8"))
             client.close()
             break
@@ -230,62 +231,48 @@ def broadcast(msg_q):  # prefix is for name identification.
 
 clients = {}
 addresses = {}
-clientList = []
+client_list = []
 
-HOST = None
-PORT = None
-
-BUFSIZ = 1024
-ADDR = (HOST, PORT)
+BUF_SIZE = 1024
 
 SERVER = socket(AF_INET, SOCK_STREAM)
 
 
 def enter_host_port():
 
-    global HOST
-    global PORT
-    global ADDR
-    host_syntax = r"(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}"
-
     def enter_host():
+        host_syntax = r"(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}"
 
-        global HOST
-
-        HOST = input("HOST: ")
-        CheckHost = re.fullmatch(host_syntax, HOST)
+        host = input("HOST: ")
+        CheckHost = re.fullmatch(host_syntax, host)
         if CheckHost is None:
             print("Host - a sequence of 4 numbers (from 0 to 255) separated by dots.")
             print("Enter a host such as: 0.0.0.0 - 255.255.255.255")
             enter_host()
 
+        return host
+
     def enter_port():
 
-        global PORT
-
-        PORT = input("PORT: ")
-        if PORT.isnumeric() is False or int(PORT) > 65535:
+        port = input("PORT: ")
+        if port.isnumeric() is False or int(port) > 65535:
             print("Port is a number from 1 to 65535")
             enter_port()
-        PORT = int(PORT)
+        port = int(port)
 
-    enter_host()
-    enter_port()
-    ADDR = (HOST, PORT)
+        return port
 
     try:
-        SERVER.bind(ADDR)
+        # return host port
+        SERVER.bind((enter_host(), enter_port()))
+
     except Exception as y:
         enter_host_port()
 
 
-if __name__ == "__main__":
+# def server_bind():
 
-    enter_host_port()
-    SERVER.listen(5)
-    print("Waiting for connection...")
-    ACCEPT_THREAD = Thread(target=accept_incoming_connections, daemon=True)
-    ACCEPT_THREAD.start()
-    ACCEPT_THREAD.join()
+if __name__ == "__main__":
+    main()
 
 SERVER.close()
