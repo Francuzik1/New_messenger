@@ -17,7 +17,7 @@ you_start_call = False
 check_call = False
 in_call = False
 win_wait_call = None
-callForPerson = None
+call_for_person = None
 call_for_you = None
 receiver = None
 sender = None
@@ -126,37 +126,37 @@ canvas.create_text(
 sub_win_host_port.resizable(False, False)
 dark_title_bar(sub_win_host_port)
 
-fileRoad = None
+file_road = None
 catalog = None
-workFiles = None
-workFolders = None
-workDirs = None
+work_files = None
+work_folders = None
+work_dirs = None
 
 
 def up_select_win():
-    global fileRoad
+    global file_road
     global catalog
     catalog = os.getcwd()
 
     def backer():
         global catalog
-        global workFiles
-        global workFolders
-        global workDirs
+        global work_files
+        global work_folders
+        global work_dirs
         catalog = os.path.dirname(catalog)
 
-        for nowDirs, nowFolders, nowFiles in os.walk(catalog):
-            workDirs = nowDirs
-            workFolders = nowFolders
-            workFiles = nowFiles
+        for now_dirs, now_folders, now_files in os.walk(catalog):
+            work_dirs = now_dirs
+            work_folders = now_folders
+            work_files = now_files
             break
-        cursorSelect.delete(0, END)
+        curso_select.delete(0, END)
 
-        for newFiles in workFiles:
-            cursorSelect.insert(tk.END, newFiles)
+        for new_files in work_files:
+            curso_select.insert(tk.END, new_files)
 
-        for newFolders in workFolders:
-            cursorSelect.insert(tk.END, newFolders)
+        for new_folders in work_folders:
+            curso_select.insert(tk.END, new_folders)
 
         folder_info.delete(0, END)
         folder_info.insert(END, catalog)
@@ -164,45 +164,45 @@ def up_select_win():
 
     def new_iteration(event):
 
-        global workFiles
-        global workFolders
-        global workDirs
+        global work_files
+        global work_folders
+        global work_dirs
         global catalog
 
-        lenSelectElements = cursorSelect.curselection()
-        cursorSelectVar = None
+        len_select_elements = curso_select.curselection()
+        cursor_select_var = None
 
-        if len(lenSelectElements) > 0:
-            cursorSelectVar = cursorSelect.curselection()[0]
+        if len(len_select_elements) > 0:
+            cursor_select_var = curso_select.curselection()[0]
 
-        if cursorSelectVar is not None:
+        if cursor_select_var is not None:
 
-            for nowDirs, nowFolders, nowFiles in os.walk(catalog):
-                workDirs = nowDirs
-                workFolders = nowFolders
-                workFiles = nowFiles
+            for now_dirs, now_folders, now_files in os.walk(catalog):
+                work_dirs = now_dirs
+                work_folders = now_folders
+                work_files = now_files
                 break
 
-            if cursorSelect.get(cursorSelectVar) not in workFiles:
+            if curso_select.get(cursor_select_var) not in work_files:
 
                 if catalog[-1] != "\\":
-                    catalog = catalog + "\\" + cursorSelect.get(cursorSelectVar)
+                    catalog = catalog + "\\" + curso_select.get(cursor_select_var)
 
                 else:
-                    catalog = catalog + cursorSelect.get(cursorSelectVar)
+                    catalog = catalog + curso_select.get(cursor_select_var)
 
-                for nowDirs, nowFolders, nowFiles in os.walk(catalog):
-                    workDirs = nowDirs
-                    workFolders = nowFolders
-                    workFiles = nowFiles
+                for now_dirs, now_folders, now_files in os.walk(catalog):
+                    work_dirs = now_dirs
+                    work_folders = now_folders
+                    work_files = now_files
                     break
-                cursorSelect.delete(0, END)
+                curso_select.delete(0, END)
 
-                for newFiles in workFiles:
-                    cursorSelect.insert(tk.END, newFiles)
+                for new_files in work_files:
+                    curso_select.insert(tk.END, new_files)
 
-                for newFolders in workFolders:
-                    cursorSelect.insert(tk.END, newFolders)
+                for new_folders in work_folders:
+                    curso_select.insert(tk.END, new_folders)
 
                 folder_info.delete(0, END)
                 folder_info.insert(END, catalog)
@@ -213,23 +213,23 @@ def up_select_win():
         index_element = r'\''
         index_element = index_element[0]
         file_road_var = index_element.join(file_road_var)
-        fileSize = (os.stat(file_road_var)).st_size
-        fullNumber1024 = fileSize // 1024
-        fileRemainder = fileSize - (fullNumber1024 * 1024)
+        file_size = (os.stat(file_road_var)).st_size
+        full_number1024 = file_size // 1024
+        file_remainder = file_size - (full_number1024 * 1024)
 
         dialog_window.insert(END, str(name) + ": " + file_name_var)
         dialog_window.yview_moveto(1)
 
         if person not in groups:
 
-            personal_file_configuration = str(fullNumber1024) + "/fileName" + str(fileRemainder) + "/fileName" \
-                                          + file_name_var + "/fileName" + str(name)
+            personal_file_configuration = str(full_number1024) + "/file_name" + str(file_remainder) + "/file_name" \
+                                          + file_name_var + "/file_name" + str(name)
             work_socket.send(bytes(json.dumps({"type": "personal_file_configuration",
                                                "msg": personal_file_configuration}), "utf8"))
 
             if os.path.exists("story\\" + str(name) + " " + str(person) + ".txt") is False:
 
-                file = open("story\\" + str(name) + " " + str(person) + ".txt", "lenSelectElements")
+                file = open("story\\" + str(name) + " " + str(person) + ".txt", "len_select_elements")
                 file.write(str(name) + ": " + file_name_var)
                 file.close()
 
@@ -241,14 +241,14 @@ def up_select_win():
 
         else:
 
-            group_file_configuration = str(fullNumber1024) + "/file_group" + str(fileRemainder) + "/file_group" \
+            group_file_configuration = str(full_number1024) + "/file_group" + str(file_remainder) + "/file_group" \
                                        + file_name_var + "/file_group" + str(name) + "/file_group" + str(person)
             work_socket.send(
                 bytes(json.dumps({"type": "group_file_configuration", "msg": group_file_configuration}), "utf8"))
 
             if os.path.exists("groups\\" + str(person) + ".txt") is False:
 
-                file = open("groups\\" + str(person) + ".txt", "lenSelectElements")
+                file = open("groups\\" + str(person) + ".txt", "len_select_elements")
                 file.write(str(name) + ": " + file_name_var)
                 file.close()
 
@@ -258,37 +258,37 @@ def up_select_win():
                 file.write("\n" + str(name) + ": " + file_name_var)
                 file.close()
 
-        fileRead = open(file_road_var, "rb")
-        fileInfoPortion = fileRead.read(1024)
+        file_read = open(file_road_var, "rb")
+        file_info_portion = file_read.read(1024)
 
-        while fileInfoPortion:
-            work_socket.send(fileInfoPortion)
-            fileInfoPortion = fileRead.read(1024)
+        while file_info_portion:
+            work_socket.send(file_info_portion)
+            file_info_portion = file_read.read(1024)
 
-        fileRead.close()
+        file_read.close()
 
     def select():
-        global fileRoad
+        global file_road
 
-        fileRoad = None
-        cv = cursorSelect.curselection()
+        file_road = None
+        cv = curso_select.curselection()
 
         if len(cv) > 0:
-            fileRoad = cursorSelect.get(cv[0])
-            fileName = fileRoad
+            file_road = curso_select.get(cv[0])
+            file_name = file_road
 
-            if workDirs[-1] != "\\":
-                fileRoad = workDirs + "\\" + fileRoad
+            if work_dirs[-1] != "\\":
+                file_road = work_dirs + "\\" + file_road
 
             else:
-                fileRoad = workDirs + fileRoad
+                file_road = work_dirs + file_road
 
-            road_sign(fileName, fileRoad)
+            road_sign(file_name, file_road)
             win.destroy()
 
-    workFiles = None
-    workFolders = None
-    workDirs = None
+    work_files = None
+    work_folders = None
+    work_dirs = None
 
     win = Toplevel()
     win.title("Searcher")
@@ -297,18 +297,18 @@ def up_select_win():
     dark_title_bar(win)
     win["bg"] = "#212121"
 
-    sb_WorkDirs = ttk.Scrollbar(win, orient='vertical')
+    sb_work_dirs = ttk.Scrollbar(win, orient='vertical')
 
     searcher_style = ttk.Style()
     searcher_style.theme_use('classic')
     searcher_style.configure("Vertical.TScrollbar", background="#3A3A3A", troughcolor="#2F2F38", activebackground="red")
 
-    cursorSelect = tk.Listbox(win, bg="#2F2F38", fg="#C1C1C1", font=("Rajdhani Regular", 20 * -1),
+    curso_select = tk.Listbox(win, bg="#2F2F38", fg="#C1C1C1", font=("Rajdhani Regular", 20 * -1),
                               selectbackground="#77B5FE", selectmode=SINGLE, borderwidth=5, highlightthickness=5,
                               height=22, width=40, relief=GROOVE, bd=0, highlightbackground="#3A3A3A",
-                              highlightcolor="#3A3A3A", yscrollcommand=sb_WorkDirs.set)
+                              highlightcolor="#3A3A3A", yscrollcommand=sb_work_dirs.set)
 
-    sb_WorkDirs.config(command=cursorSelect.yview)
+    sb_work_dirs.config(command=curso_select.yview)
     image_back = IT.PhotoImage(file="work_files/back_button.png")
     image_select = IT.PhotoImage(file="work_files/select_button.png")
 
@@ -321,25 +321,25 @@ def up_select_win():
     catalog = os.getcwd()
 
     for dirs, folder, files in os.walk(catalog):
-        workDirs = dirs
-        workFolders = folder
-        workFiles = files
+        work_dirs = dirs
+        work_folders = folder
+        work_files = files
         break
 
-    for new_files in workFiles:
-        cursorSelect.insert(tk.END, new_files)
+    for new_files in work_files:
+        curso_select.insert(tk.END, new_files)
 
-    for new_folders in workFolders:
-        cursorSelect.insert(tk.END, new_folders)
+    for new_folders in work_folders:
+        curso_select.insert(tk.END, new_folders)
 
-    cursorSelect.place(x=330, y=0)
+    curso_select.place(x=330, y=0)
 
-    sb_WorkDirs.place(x=780, y=0, height=538)
+    sb_work_dirs.place(x=780, y=0, height=538)
 
-    Canvas_for_file_road = Canvas(win, width=29, height=56, bg="#2F2F38", bd=0, relief='ridge')
-    Canvas_for_file_road.config(highlightbackground="#2F2F38", highlightthickness=3)
-    Canvas_for_file_road.place(x=548, y=538)
-    cursorSelect.bind("<Double-Button-1>", new_iteration)
+    canvas_for_file_road = Canvas(win, width=29, height=56, bg="#2F2F38", bd=0, relief='ridge')
+    canvas_for_file_road.config(highlightbackground="#2F2F38", highlightthickness=3)
+    canvas_for_file_road.place(x=548, y=538)
+    curso_select.bind("<Double-Button-1>", new_iteration)
     sb_file_road = ttk.Scrollbar(win, orient='horizontal')
     folder_info = Listbox(win, height=1, width=35, bg="#2F2F38", bd=0, font=("NTR", 15 * -1), fg="#77B5FE",
                           xscrollcommand=sb_file_road.set, highlightbackground="#3A3A3A", highlightcolor="#3A3A3A")
@@ -350,7 +350,7 @@ def up_select_win():
     folder_info.xview_moveto(1)
     win.mainloop()
 
-    return fileRoad
+    return file_road
 
 
 def host_port_e(event):
@@ -400,7 +400,7 @@ except Exception as e:
 
 client_list = []
 
-groupMode = False
+group_mode = False
 
 msg = work_socket.recv(1024).decode("utf8")
 
@@ -588,207 +588,218 @@ def receive():
     global you_start_call
     global name_of_call
 
-    utfMode = True
+    msg = None
+    is_text_msg = True
     full_number = None
     other_number = None
-    sendFile = None
+    send_file = None
 
     while True:
         try:
-            if utfMode is True:
+            if is_text_msg is True:
 
-                msg = work_socket.recv(1024).decode("utf8")
+                msg = eval(work_socket.recv(1024).decode("utf8"))
+                msg_type = msg["type"]
+                msg = msg["msg"]
                 print(msg)
 
-                if "/new_client_list " in msg:
-                    split_msg = msg.split(" ")
-                    clientList = split_msg[1].split(",")
-                    person_list.delete(0, END)
+                match msg_type:
 
-                    if name in clientList:
-                        clientList.remove(str(name))
+                    case "new_client_list":
 
-                    for i in clientList:
-                        person_list.insert(0, i)
+                        split_msg = msg.split(" ")
+                        clientList = split_msg[1].split(",")
+                        person_list.delete(0, END)
 
-                elif "/create_new_group " in msg:
-                    msg = msg.split(" ")[1]
-                    msg = msg.split(",")
-                    name_of_group = msg.pop(0)
-                    fileGroup = open("groups\\" + name_of_group + ".txt", "w")
-                    fileGroup.write(",".join(msg))
-                    fileGroup.close()
-                    groups.append(name_of_group)
-                    person_list.insert(0, name_of_group)
+                        if name in clientList:
+                            clientList.remove(str(name))
 
-                elif "mes_group" in msg:
-                    msg = msg.split("mes_group")
-                    GroupNow = msg[0]
-                    msg = msg[1]
-                    fileGroup = open("groups\\" + GroupNow + ".txt", "a")
-                    fileGroup.write("\n" + msg)
-                    fileGroup.close()
-                    if GroupNow == person:
-                        dialog_window.insert(END, msg)
-                        dialog_window.yview_moveto(1)
+                        for i in clientList:
+                            person_list.insert(0, i)
 
-                elif "/abpers" in msg:
-                    msg = msg.split("/abpers")[1]
-                    msg_from = msg.split(":")[0]
+                    case "create_new_group":
 
-                    if msg_from == person or msg_from == name:
-                        dialog_window.insert(END, msg)
-                        dialog_window.yview_moveto(1)
+                        msg = msg.split(" ")[1]
+                        msg = msg.split(",")
+                        name_of_group = msg.pop(0)
+                        file_group = open("groups\\" + name_of_group + ".txt", "w")
+                        file_group.write(",".join(msg))
+                        file_group.close()
+                        groups.append(name_of_group)
+                        person_list.insert(0, name_of_group)
 
-                    if msg_from != name and msg_from != person:
+                    case "group_msg":
 
-                        if os.path.exists("story\\" + str(name) + " " + str(msg_from) + ".txt") is False:
-                            file = open("story\\" + str(name) + " " + str(msg_from) + ".txt", "w")
-                            file.write(msg)
+                        msg = msg.split("mes_group")
+                        group_now = msg[0]
+                        msg = msg[1]
+                        file_group = open("groups\\" + group_now + ".txt", "a")
+                        file_group.write("\n" + msg)
+                        file_group.close()
+                        if group_now == person:
+                            dialog_window.insert(END, msg)
+                            dialog_window.yview_moveto(1)
+
+                    case "personal_msg":
+
+                        msg = msg.split("/abpers")[1]
+                        msg_from = msg.split(":")[0]
+
+                        if msg_from == person or msg_from == name:
+                            dialog_window.insert(END, msg)
+                            dialog_window.yview_moveto(1)
+
+                        if msg_from != name and msg_from != person:
+
+                            if os.path.exists("story\\" + str(name) + " " + str(msg_from) + ".txt") is False:
+                                file = open("story\\" + str(name) + " " + str(msg_from) + ".txt", "w")
+                                file.write(msg)
+                                file.close()
+
+                            else:
+                                file = open("story\\" + str(name) + " " + str(msg_from) + ".txt", "a")
+                                file.write("\n" + msg)
+                                file.close()
+
+                        else:
+                            if os.path.exists("story\\" + str(name) + " " + str(person) + ".txt") is False:
+                                file = open("story\\" + str(name) + " " + str(person) + ".txt", "w")
+                                file.write(msg)
+                                file.close()
+
+                            else:
+                                file = open("story\\" + str(name) + " " + str(person) + ".txt", "a")
+                                file.write("\n" + msg)
+                                file.close()
+
+                    case "personal_file_configuration":
+
+                        msg = msg.split("/file_name")
+                        full_number = int(msg[0])
+                        other_number = int(msg[1])
+                        file_from = str(msg[3])
+
+                        if file_from == person:
+                            dialog_window.insert(END, str(file_from) + ": " + msg[2])
+                            dialog_window.yview_moveto(1)
+
+                        if os.path.exists("story\\" + str(name) + " " + str(file_from) + ".txt") is False:
+
+                            file = open("story\\" + str(name) + " " + str(file_from) + ".txt", "w")
+                            file.write(str(file_from) + ": " + msg[2])
                             file.close()
 
                         else:
-                            file = open("story\\" + str(name) + " " + str(msg_from) + ".txt", "a")
-                            file.write("\n" + msg)
+
+                            file = open("story\\" + str(name) + " " + str(file_from) + ".txt", "a")
+                            file.write("\n" + str(file_from) + ": " + msg[2])
                             file.close()
 
-                    else:
-                        if os.path.exists("story\\" + str(name) + " " + str(person) + ".txt") is False:
-                            file = open("story\\" + str(name) + " " + str(person) + ".txt", "w")
-                            file.write(msg)
-                            file.close()
+                        send_file = open('sent/' + msg[2], 'wb')
 
-                        else:
-                            file = open("story\\" + str(name) + " " + str(person) + ".txt", "a")
-                            file.write("\n" + msg)
-                            file.close()
+                        is_text_msg = False
 
-                elif "/file_name" in msg:
-                    msg = msg.split("/file_name")
-                    full_number = int(msg[0])
-                    other_number = int(msg[1])
-                    file_from = str(msg[3])
+                    case "group_file_configuration":
 
-                    if file_from == person:
-                        dialog_window.insert(END, str(file_from) + ": " + msg[2])
-                        dialog_window.yview_moveto(1)
+                        msg = msg.split("/file_group")
 
-                    if os.path.exists("story\\" + str(name) + " " + str(file_from) + ".txt") is False:
+                        if msg[4] == person:
+                            dialog_window.insert(END, msg[3] + ": " + msg[2])
+                            dialog_window.yview_moveto(1)
 
-                        file = open("story\\" + str(name) + " " + str(file_from) + ".txt", "w")
-                        file.write(str(file_from) + ": " + msg[2])
+                        full_number = int(msg[0])
+                        other_number = int(msg[1])
+                        file_from_name = str(msg[3])
+                        file_from_group = str(msg[4])
+                        file = open("groups\\" + file_from_group + ".txt", "a")
+                        file.write("\n" + str(file_from_name) + ": " + msg[2])
                         file.close()
+                        send_file = open('sent/' + msg[2], 'wb')
 
-                    else:
+                        is_text_msg = False
 
-                        file = open("story\\" + str(name) + " " + str(file_from) + ".txt", "a")
-                        file.write("\n" + str(file_from) + ": " + msg[2])
-                        file.close()
+                    case "start_aud_call":
 
-                    sendFile = open('sent/' + msg[2], 'wb')
+                        check_call = True
 
-                    utfMode = False
+                    case "connect_to_aud_call":
 
-                elif "/fileGroup" in msg:
+                        if you_start_call is True:
+                            you_start_call = False
+                            win_wait_call.destroy()
 
-                    msg = msg.split("/fileGroup")
+                        in_call = True
 
-                    if msg[4] == person:
-                        dialog_window.insert(END, msg[3] + ": " + msg[2])
-                        dialog_window.yview_moveto(1)
+                    case "stop_aud_calling":
 
-                    full_number = int(msg[0])
-                    other_number = int(msg[1])
-                    file_from_name = str(msg[3])
-                    file_from_group = str(msg[4])
-                    file = open("groups\\" + file_from_group + ".txt", "a")
-                    file.write("\n" + str(file_from_name) + ": " + msg[2])
-                    file.close()
-                    sendFile = open('sent/' + msg[2], 'wb')
+                        call_for_you.destroy()
 
-                    utfMode = False
+                    case "stop_aud_sender":
 
-                elif "/start_audio/" in msg:
+                        msg = msg.split("/stop_sender/")
+                        sender.stop_stream()
+                        stop_aud_receiver_person1 = msg[1] + "/stop_reciver/" + msg[0]
+                        work_socket.send(bytes(json.dumps({"type": "stop_aud_receiver_person1",
+                                                           "msg": stop_aud_receiver_person1}), "utf8"))
 
-                    check_call = True
+                    case "stop_aud_receiver_person1":
 
-                elif "/yes_call/" in msg:
+                        msg = (msg.split("/stop_reciver/"))[1]
+                        receiver.stop_server()
+                        stop_aud_receiver_person2 = msg + "/stop_last_recive/"
+                        work_socket.send(bytes(json.dumps({"type": "stop_aud_receiver_person2",
+                                                           "msg": stop_aud_receiver_person2}), "utf8"))
 
-                    if you_start_call is True:
+                        window_of_call_aud.destroy()
+
+                    case "stop_aud_receiver_person2":
+
+                        window_of_call_aud.destroy()
+                        receiver.stop_server()
+
+                    case "reject_call":
+
+                        in_call = False
                         you_start_call = False
                         win_wait_call.destroy()
 
-                    in_call = True
-                elif "/stop_calling/" in msg:
+                    case "stop_aud_call_from_receiver":
 
-                    call_for_you.destroy()
+                        window_of_call_aud.destroy()
+                        sender.stop_stream()
+                        stop_aud_sender = name_of_call + "/stop_sender/" + name
+                        work_socket.send(bytes(json.dumps({"type": "stop_aud_sender", "msg": stop_aud_sender}), "utf8"))
 
-                elif "/stop_sender/" in msg:
+            else:
 
-                    msg = msg.split("/stop_sender/")
-                    sender.stop_stream()
-                    stop_aud_receiver_person1 = msg[1] + "/stop_reciver/" + msg[0]
-                    work_socket.send(bytes(json.dumps({"type": "stop_aud_receiver_person1",
-                                                       "msg": stop_aud_receiver_person1}), "utf8"))
+                while full_number != 0:
+                    msg = work_socket.recv(1024)
+                    send_file.write(msg)
+                    full_number -= 1
 
-                elif "/stop_reciver/" in msg:
+                if other_number != 0:
+                    msg = work_socket.recv(int(other_number))
+                    send_file.write(msg)
 
-                    msg = (msg.split("/stop_reciver/"))[1]
-                    receiver.stop_server()
-                    stop_aud_receiver_person2 = msg + "/stop_last_recive/"
-                    work_socket.send(bytes(json.dumps({"type": "stop_aud_receiver_person2",
-                                                       "msg": stop_aud_receiver_person2}), "utf8"))
+                send_file.close()
 
-                    window_of_call_aud.destroy()
-
-                elif "/stop_last_recive/" in msg:
-
-                    window_of_call_aud.destroy()
-                    receiver.stop_server()
-
-                elif "/stop_call_me" in msg:
-
-                    in_call = False
-                    you_start_call = False
-                    win_wait_call.destroy()
-
-                elif "/stop_call_other/" in msg:
-
-                    window_of_call_aud.destroy()
-                    sender.stop_stream()
-                    stop_aud_sender = name_of_call + "/stop_sender/" + name
-                    work_socket.send(bytes(json.dumps({"type": "stop_aud_sender", "msg": stop_aud_sender}), "utf8"))
-
-                else:
-
-                    while full_number != 0:
-                        msg = work_socket.recv(1024)
-                        sendFile.write(msg)
-                        full_number -= 1
-
-                    if other_number != 0:
-                        msg = work_socket.recv(int(other_number))
-                        sendFile.write(msg)
-
-                    sendFile.close()
-
-                    utfMode = True
+                is_text_msg = True
 
         except OSError:
             break
 
 
-listOfGroup = []
+list_of_group = []
 
 
 def new_dialog(event):
     global image_base_user
     global person
-    global listOfGroup
-    global groupMode
+    global list_of_group
+    global group_mode
     global canvas_person
 
-    if groupMode is False and person_list.get(person_list.curselection()[0]) not in groups and person_list.get(
+    if group_mode is False and person_list.get(person_list.curselection()[0]) not in groups and person_list.get(
             person_list.curselection()[0]) != person:
 
         image_base_user = IT.PhotoImage(file="work_files/def_user.png")
@@ -804,9 +815,9 @@ def new_dialog(event):
         if os.path.exists("story\\" + str(name) + " " + str(person) + ".txt"):
 
             file = open("story\\" + str(name) + " " + str(person) + ".txt", "r")
-            oldString = file.readlines()
+            old_string = file.readlines()
 
-            for i in oldString:
+            for i in old_string:
                 dialog_window.insert(END, i)
 
             dialog_window.yview_moveto(1)
@@ -834,9 +845,9 @@ def new_dialog(event):
 
             global win_wait_call
             global you_start_call
-            global callForPerson
+            global call_for_person
             you_start_call = True
-            callForPerson = person
+            call_for_person = person
 
             start_aud_call = str(person + "/start_audio/" + socket.gethostbyname(socket.gethostname())) + \
                              "/start_audio/" + str(name)
@@ -854,14 +865,14 @@ def new_dialog(event):
 
             Label(win_wait_call, image=image_photo_call, bg="#212121", activebackground="#212121").place(x=250, y=100)
 
-            whoCall = Canvas(win_wait_call, bg="#2F2F38", width=596, height=40, borderwidth=0, bd=0,
+            who_call = Canvas(win_wait_call, bg="#2F2F38", width=596, height=40, borderwidth=0, bd=0,
                              highlightbackground="#3A3A3A")
-            whoCall.place(x=0, y=200)
-            whoCall.create_text(298, 20, text=person, fill="#9E9E9E", font=("NTR", 24 * -1))
+            who_call.place(x=0, y=200)
+            who_call.create_text(298, 20, text=person, fill="#9E9E9E", font=("NTR", 24 * -1))
 
             def stop_calling():
                 win_wait_call.destroy()
-                stop_aud_calling = callForPerson + "/stop_calling/"
+                stop_aud_calling = call_for_person + "/stop_calling/"
                 work_socket.send(bytes(json.dumps({"type": "stop_aud_calling", "msg": stop_aud_calling}), "utf8"))
 
             Button(win_wait_call, image=image_off_call, command=stop_calling, relief='flat', bg="#212121",
@@ -900,7 +911,7 @@ def new_dialog(event):
             height=35.0
         )
 
-    elif person_list.get(person_list.curselection()[0]) in groups and groupMode is False and person_list.get(
+    elif person_list.get(person_list.curselection()[0]) in groups and group_mode is False and person_list.get(
             person_list.curselection()[0]) != person:
 
         image_base_user = IT.PhotoImage(file="work_files/def_group.png")
@@ -912,10 +923,10 @@ def new_dialog(event):
         canvas_who_talk.itemconfigure(canvas_person, text=person)
 
         file = open("groups\\" + person + ".txt", "r")
-        oldString = file.readlines()
-        oldString.pop(0)
+        old_string = file.readlines()
+        old_string.pop(0)
 
-        for i in oldString:
+        for i in old_string:
             dialog_window.insert(END, i)
 
         def send_e_g(event):
@@ -968,15 +979,15 @@ def new_dialog(event):
 
     else:
 
-        if groupMode is True:
+        if group_mode is True:
 
             if dialog_window.get(0) != "Your group: ":
                 dialog_window.delete(0, END)
                 dialog_window.insert(0, "Your group: ")
             group_person = person_list.get(person_list.curselection()[0])
 
-            if group_person not in listOfGroup and group_person not in groups:
-                listOfGroup.append(group_person)
+            if group_person not in list_of_group and group_person not in groups:
+                list_of_group.append(group_person)
                 dialog_window.insert(END, group_person)
 
             def create_group():
@@ -988,29 +999,29 @@ def new_dialog(event):
                 group_name.pack()
 
                 def create_new_group():
-                    global groupMode
-                    global listOfGroup
+                    global group_mode
+                    global list_of_group
 
                     if group_name.get() not in groups:
                         group_name_var = group_name.get()
                         groups.append(group_name_var)
                         g_file = open("groups\\" + group_name_var + ".txt", "w")
-                        g_file.write(name + "," + ",".join(listOfGroup))
+                        g_file.write(name + "," + ",".join(list_of_group))
                         g_file.close()
                         person_list.insert(0, group_name_var)
                         dialog_window.delete(0, END)
-                        groupMode = False
+                        group_mode = False
                         person_get_file = "/create_new_group " + group_name_var + "," + str(name) + "," + \
-                                          ",".join(listOfGroup)
+                                          ",".join(list_of_group)
                         work_socket.send(bytes(json.dumps({"type": "person_get_file", "msg": person_get_file}), "utf8"))
-                        listOfGroup = []
+                        list_of_group = []
                         btn_send.destroy()
                         win_name_group.destroy()
 
                 tk.Button(win_name_group, text="OK", command=create_new_group, bg="#212121", fg="#77B5FE").pack()
                 dark_title_bar(win_name_group)
 
-            if len(listOfGroup) >= 2:
+            if len(list_of_group) >= 2:
                 image_create = IT.PhotoImage(file="work_files/create_button.png")
                 btn_send = tk.Button(main_win, image=image_create, command=create_group,
                                      relief='flat', bg="#3A3A3A", activebackground="#212121")
@@ -1019,8 +1030,8 @@ def new_dialog(event):
 
 
 def new_group():
-    global groupMode
-    groupMode = True
+    global group_mode
+    group_mode = True
 
 
 def sub_close_e(event):

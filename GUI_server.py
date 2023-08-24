@@ -2,6 +2,7 @@ from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 import os.path
 import re
+import json
 
 
 name_to_clientList = {}
@@ -26,7 +27,7 @@ def init_server():
         client, client_address = SERVER.accept()
         addresses[client] = client_address
         msg = "/new_client_list " + ",".join(client_list)
-        client.send(bytes(msg, "utf8"))
+        client.send(bytes(json.dumps({"type": "new_client_list", "msg": msg}), "utf8"))
         Thread(target=handle_client, args=(client,), daemon=True).start()
 
 
@@ -39,7 +40,7 @@ def handle_client(client):  # Takes client socket as argument.
     msg = "/new_client_list " + ",".join(client_list)
     clients[client] = name
     name_to_clientList[name] = client
-    broadcast(bytes(msg, "utf8"))
+    broadcast(bytes(json.dumps({"type": "new_client_list", "msg": msg}), "utf8"))
 
     is_text_msg = True
     # file_size // 1024
@@ -64,8 +65,11 @@ def handle_client(client):  # Takes client socket as argument.
                         msg = msg.split("abpers")
                         from_person = msg[0]
                         to_person = msg[2]
-                        name_to_clientList[from_person].send(bytes("/abpers" + from_person + ": " + msg[1], "utf8"))
-                        name_to_clientList[to_person].send(bytes("/abpers" + from_person + ": " + msg[1], "utf8"))
+                        personal_msg = "/abpers" + from_person + ": " + msg[1]
+                        name_to_clientList[from_person].send(bytes(json.dumps({"type": "personal_msg",
+                                                                               "msg": personal_msg}), "utf8"))
+                        name_to_clientList[to_person].send(bytes(json.dumps({"type": "personal_msg",
+                                                                             "msg": personal_msg}), "utf8"))
 
                     case "create_new_group":
 
@@ -73,10 +77,11 @@ def handle_client(client):  # Takes client socket as argument.
                         msg = msg.split(",")
                         group_name = msg.pop(0)
                         creator = msg.pop(0)
+                        create_new_group = "/create_new_group " + group_name + "," + creator + "," + ",".join(msg)
 
                         for i in msg:
                             name_to_clientList[i].send(
-                                bytes("/create_new_group " + group_name + "," + creator + "," + ",".join(msg), "utf8"))
+                                bytes(json.dumps({"type": "create_new_group", "msg": create_new_group}), "utf8"))
 
                     case "group_msg":
 
@@ -87,8 +92,9 @@ def handle_client(client):  # Takes client socket as argument.
                         if "\n" in list_to_send:
                             list_to_send = list_to_send.split("\n")[0]
                         list_to_send = list_to_send.split(",")
+                        group_msg = group + "mes_group" + msg
                         for e in list_to_send:
-                            name_to_clientList[e].send(bytes(group + "mes_group" + msg, "utf8"))
+                            name_to_clientList[e].send(bytes(json.dumps({"type": "group_msg", "msg": group_msg}), "utf8"))
 
                     case "person_get_file":
 
@@ -105,12 +111,14 @@ def handle_client(client):  # Takes client socket as argument.
                         name_file_creator = msg[0]
                         if "\n" in persons:
                             persons = persons.split("\n")[0]
-                        talk_with_list[name_file_creator] = name_file_creator + "/talk_group" + group + "/talk_group" + \
-                                                            persons
+                        talk_with_list[name_file_creator] = name_file_creator + "/talk_group" + group + \
+                                                            "/talk_group" + persons
 
                     case "personal_file_configuration":
 
-                        name_to_clientList[talk_with_list[name]].send(bytes(msg, "utf8"))
+                        name_to_clientList[talk_with_list[name]].send(bytes(json.dumps(
+                            {"type": "personal_file_configuration", "msg": msg}), "utf8"))
+
                         msg = msg.split("/file_name")
                         file_size = int(msg[0])
                         file_remainder = int(msg[1])
@@ -118,15 +126,15 @@ def handle_client(client):  # Takes client socket as argument.
                         is_text_msg = False
 
                     case "group_file_configuration":
+
                         persons_for_send = ((talk_with_list[name].split("/talk_group"))[2]).split(",")
 
                         if name in persons_for_send:
-
                             persons_for_send.remove(name)
 
                         for i in persons_for_send:
-
-                            name_to_clientList[i].send(bytes(msg, "utf8"))
+                            name_to_clientList[i].send(bytes(json.dumps(
+                                {"type": "group_file_configuration", "msg": msg}), "utf8"))
 
                         msg = msg.split("/file_group")
                         file_size = int(msg[0])
@@ -135,42 +143,51 @@ def handle_client(client):  # Takes client socket as argument.
                         is_text_msg = False
 
                     case "start_aud_call":
+
                         person_start_aud = msg.split("/start_audio/")
-                        name_to_clientList[person_start_aud[0]].send(bytes(msg, "utf8"))
+                        name_to_clientList[person_start_aud[0]].send(bytes(json.dumps(
+                            {"type": "start_aud_call", "msg": msg}), "utf8"))
 
                     case "connect_to_aud_call":
 
                         call_to = (msg.split("/yes_call/"))[0]
-                        name_to_clientList[call_to].send(bytes(msg, "utf8"))
+                        name_to_clientList[call_to].send(bytes(json.dumps(
+                            {"type": "connect_to_aud_call", "msg": msg}), "utf8"))
 
                     case "stop_aud_calling":
 
                         person_for_stop = msg.split("/stop_calling/")[0]
-                        name_to_clientList[person_for_stop].send(bytes(msg, "utf8"))
+                        name_to_clientList[person_for_stop].send(bytes(json.dumps(
+                            {"type": "stop_aud_calling", "msg": msg}), "utf8"))
 
                     case "stop_aud_sender":
 
                         person_for_stop = msg.split("/stop_sender/")[0]
-                        name_to_clientList[person_for_stop].send(bytes(msg, "utf8"))
+                        name_to_clientList[person_for_stop].send(bytes(json.dumps(
+                            {"type": "stop_aud_sender", "msg": msg}), "utf8"))
 
                     case "stop_aud_receiver_person1":
                         person_for_stop = msg.split("/stop_reciver/")[0]
-                        name_to_clientList[person_for_stop].send(bytes(msg, "utf8"))
+                        name_to_clientList[person_for_stop].send(bytes(json.dumps(
+                            {"type": "stop_aud_receiver_person1", "msg": msg}), "utf8"))
 
                     case "stop_aud_receiver_person2":
 
                         person_for_stop = msg.split("/stop_last_recive/")[0]
-                        name_to_clientList[person_for_stop].send(bytes(msg, "utf8"))
+                        name_to_clientList[person_for_stop].send(bytes(json.dumps(
+                            {"type": "stop_aud_receiver_person2", "msg": msg}), "utf8"))
 
                     case "reject_call":
 
                         person_for_stop_call = msg.split("/stop_call_me/")[0]
-                        name_to_clientList[person_for_stop_call].send(bytes(msg, "utf8"))
+                        name_to_clientList[person_for_stop_call].send(bytes(json.dumps(
+                            {"type": "reject_call", "msg": msg}), "utf8"))
 
                     case "stop_aud_call_from_receiver":
 
                         person_for_stop_call = msg.split("/stop_call_other/")[0]
-                        name_to_clientList[person_for_stop_call].send(bytes(msg, "utf8"))
+                        name_to_clientList[person_for_stop_call].send(bytes(json.dumps(
+                            {"type": "stop_aud_call_from_receiver", "msg": msg}), "utf8"))
 
             # only for bytes of files
             else:
